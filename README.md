@@ -24,6 +24,7 @@ Recommended setup:
 import viteConfig from '../vite.config'
 import { viteIncrementalBuild, patchConfig } from 'vite-plugin-incremental-build'
 
+if (existsSync('./dist')) rmSync('./dist/', { recursive: true, force: true })
 viteIncrementalBuild({
 	config: patchConfig(viteConfig, { ignoreWarnings: false }),
 	bundleName: 'bundle',
