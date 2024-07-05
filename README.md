@@ -11,7 +11,7 @@ Large web extensions that need to be built to the disk to be installed (see note
 ## Installation
 
 ```
-npm i -D vite-plugin-incremental-build
+npm i -D vite-plugin-incremental-build tsx
 ```
 
 ## Usage
