@@ -4,6 +4,7 @@
   "description": "This is a wrapper + plugin for Vite that brings incremental builds for your project",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "type": "module",
   "files": [
     "/lib"
   ],

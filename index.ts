@@ -19,9 +19,9 @@ export const viteIncrementalBuild = ({
 	beforeBuildCallback,
 }: {
 	config: vite.UserConfig
-	bundleName: string
-	watcherIgnoredFiles: (string | RegExp)[]
-	beforeBuildCallback: () => void
+	bundleName?: string
+	watcherIgnoredFiles?: (string | RegExp)[]
+	beforeBuildCallback?: () => void
 }) => {
 	const buildFn = () => {
 		void buildBundle(bundleName, config, beforeBuildCallback)
@@ -29,7 +29,7 @@ export const viteIncrementalBuild = ({
 	const sourceFolder = config.root?.replace('./', '')
 	const watcher = chokidar.watch('./' + sourceFolder, {
 		persistent: true,
-		ignored: watcherIgnoredFiles,
+		ignored: watcherIgnoredFiles || [],
 	})
 
 	watcher
@@ -189,10 +189,10 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 	return config
 }
 
-const buildBundle = async (bundleName: string, config: vite.UserConfig, beforeBuildCallback: () => void) => {
+const buildBundle = async (bundleName: string, config: vite.UserConfig, beforeBuildCallback?: () => void) => {
 	if (running) return
 	running = true
-	beforeBuildCallback()
+	beforeBuildCallback?.()
 	const start = performance.now()
 	console.log('\x1b[90m%s\x1b[0m', `building ${bundleName}`)
 	try {

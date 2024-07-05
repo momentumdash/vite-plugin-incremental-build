@@ -28,7 +28,7 @@ if (existsSync('./dist')) rmSync('./dist/', { recursive: true, force: true })
 viteIncrementalBuild({
 	config: patchConfig(viteConfig, { ignoreWarnings: false }),
 	bundleName: 'bundle',
-	watcherIgnoredFiles: [/(^|[\/\\])\../, /* ignore dotfiles */],
+	watcherIgnoredFiles: ['./src/not-watched', /(^|[\/\\])\../, /* ignore dotfiles */],
 	beforeBuildCallback: () => {
 		// do whatever you want here, like build content scripts in iife mode
 	}

@@ -1,6 +1,6 @@
 
 import viteConfig from '../vite.config'
-import { viteIncrementalBuild, patchConfig } from '../../lib'
+import { viteIncrementalBuild, patchConfig } from 'vite-plugin-incremental-build'
 
 viteIncrementalBuild({
 	config: patchConfig(viteConfig, { ignoreWarnings: true }),
