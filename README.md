@@ -89,4 +89,9 @@ Loosely based on the [rollup-plugin-incremental](https://github.com/mprt-org/rol
 
 
 Notes:
+
 For extensions, it's required to patch rollup (use `patch-package`) to replace `_virtual` by `rollup__virtual` in order for chrome to allow installation of the bundle
+
+Tested only for vue (but React should work)
+
+Build speed is highly dependent on how many files are imported by the file that you are saving. The more files your file imports (including the files that those files import), the longer the incremental build will take
