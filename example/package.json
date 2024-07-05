@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-incremental-build-example",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "build:incremental": "tsx ./tools/buildIncremental.ts"
