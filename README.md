@@ -63,22 +63,22 @@ Your project needs to be structured like the following for this plugin to work:
 
 ```
 project
-│	package.json
-│	vite.config.ts
-│	...
+│   package.json
+│   vite.config.ts
+│   ...
 │
 └───tools
-│	│	incrementalBuild.ts
+│   │   incrementalBuild.ts
 │
 └───src
-│	│	index.html
-│	│	...
-│	│   
-│	└───public
-│		│	...
+│   │   index.html
+│   │   ...
+│   │   
+│   └───public
+│       │   ...
 │
 └───dist
-	|	your bundle
+    |   your bundle
 
 ```
 
