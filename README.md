@@ -6,7 +6,7 @@ This is a wrapper + plugin for Vite that brings incremental builds for your proj
 
 #### Use case:
 
-Large web extensions that need to be built to the disk to be installed
+Large web extensions that need to be built to the disk to be installed (see notes if you are using this for an extension)
 
 ## Installation
 
@@ -21,12 +21,13 @@ Recommended setup:
 `/tools/incrementalBuild.ts`
 
 ```ts
-import viteConfig from '../vite.config.ts'
+import viteConfig from '../vite.config'
 import { viteIncrementalBuild, patchConfig } from 'vite-plugin-incremental-build'
 
 viteIncrementalBuild({
-	config: patchConfig(viteConfig, { showWarnings: true }),
-	bundleName: 'extension',
+	config: patchConfig(viteConfig, { ignoreWarnings: false }),
+	bundleName: 'bundle',
+	watcherIgnoredFiles: [/(^|[\/\\])\../, /* ignore dotfiles */],
 	beforeBuildCallback: () => {
 		// do whatever you want here, like build content scripts in iife mode
 	}
@@ -85,3 +86,7 @@ project
 ---
 
 Loosely based on the [rollup-plugin-incremental](https://github.com/mprt-org/rollup-plugin-incremental/)
+
+
+Notes:
+For extensions, it's required to patch rollup (use `patch-package`) to replace `_virtual` by `rollup__virtual` in order for chrome to allow installation of the bundle

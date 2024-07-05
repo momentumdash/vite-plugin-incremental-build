@@ -1,0 +1,38 @@
+{
+  "name": "vite-plugin-incremental-build",
+  "version": "1.0.0",
+  "description": "This is a wrapper + plugin for Vite that brings incremental builds for your project",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "/lib"
+  ],
+  "scripts": {
+    "build": "rimraf lib && tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/momentumdash/vite-plugin-incremental-build.git"
+  },
+  "keywords": [
+    "vite",
+    "incremental",
+    "build"
+  ],
+  "author": "Momentum Dashboard Corp.",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/momentumdash/vite-plugin-incremental-build/issues"
+  },
+  "homepage": "https://github.com/momentumdash/vite-plugin-incremental-build#readme",
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "chokidar": "^3.6.0",
+    "rimraf": "^5.0.7",
+    "typescript": "^5.5.3"
+  },
+  "peerDependencies": {
+    "fast-glob": "^3.3.2",
+    "vite": "^5.0.0"
+  }
+}
