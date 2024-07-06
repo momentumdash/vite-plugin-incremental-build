@@ -1,5 +1,5 @@
 # Incremental builds for Vite
-This is a wrapper + plugin for Vite that brings incremental builds for your project
+brings incremental builds for your project
 
 ![Vite vs Vite Incremental](https://github.com/momentumdash/vite-plugin-incremental-build/assets/114431298/e070f60d-8519-4885-823c-8b9477ea8b5a)
 
