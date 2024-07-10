@@ -153,11 +153,8 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 						const bundleEntry = bundle[imported]
 						if (!bundleEntry) return
 						dictionary[bundleEntry.name + '.js']?.parents.add(key)
-						if (bundleEntry.name?.includes('.vue')) {
-							const cssFileEntryKey = bundleEntry.name.replace('.vue', '.css')
-							if (cssFileEntryKey in dictionary) cssImportsToFind.add(cssFileEntryKey)
-						}
 					})
+					if (key.endsWith('.css')) cssImportsToFind.add(key);
 				})
 				fg.globSync('dist/**/*.html').forEach(match => {
 					const key = match.replace('dist/', '')
