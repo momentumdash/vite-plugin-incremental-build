@@ -12,6 +12,7 @@ type DictionaryEntry = {
 	imports: string[]
 }
 const dictionary: Record<string, DictionaryEntry> = {}
+let originalEntries: Record<string, string>
 
 // we use a chokidar watcher so we can rely on it for incremental changes and build only what changed (and its dependencies)
 // it's also easier to trigger a full rebuild when the file structure changes
@@ -89,6 +90,19 @@ export const patchConfig = (
 			'\x1b[33m%s\x1b[0m',
 			`expected to 'build.rollupOptions' in vite config to not exist`
 		)
+	}
+
+	if (
+		config.build.rollupOptions &&
+		(typeof config.build.rollupOptions.input !== 'object' ||
+			Array.isArray(config.build.rollupOptions.input) ||
+			!Object.keys(config.build.rollupOptions.input).length)
+	) {
+		console.log(
+			'\x1b[31m%s\x1b[0m',
+			`build.rollupOptions.input was supplied but was either empty, a string or a string[]. Please use an object instead (Record<string, string>)`
+		)
+		throw new Error('config error')
 	}
 
 	config.build.emptyOutDir = false
@@ -228,10 +242,25 @@ export const patchConfig = (
 			})()
 		},
 		options(options) {
+			if (
+				originalEntries === undefined &&
+				options.input &&
+				typeof options.input === 'object' &&
+				!Array.isArray(options.input) &&
+				Object.keys(options.input).length
+			)
+				originalEntries = options.input
 			if (watcherModifiedFile) {
 				// partial build
+				let entryName = watcherModifiedFile.split('.')[0]!
+				const findMatching = (item: [string, string]) =>
+					item[1] === config.root + '/' + watcherModifiedFile
+				const matchingItemInEntries =
+					Object.entries(originalEntries).find(findMatching)
+				if (originalEntries && matchingItemInEntries)
+					entryName = matchingItemInEntries[0]
 				const modifiedEntries = {
-					[watcherModifiedFile.split('.')[0]!]: config.root + '/' + watcherModifiedFile,
+					[entryName]: config.root + '/' + watcherModifiedFile,
 				}
 				options.input = modifiedEntries
 			}
