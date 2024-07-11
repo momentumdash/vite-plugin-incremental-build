@@ -6,7 +6,11 @@ import fg from 'fast-glob'
 let running = false
 let watcherModifiedFile: string | null = null
 let waitForBuildEndPromiseResolver: (() => void) | undefined
-type DictionaryEntry = { parents: Set<string>; realLocationInDist: string; imports: string[] }
+type DictionaryEntry = {
+	parents: Set<string>
+	realLocationInDist: string
+	imports: string[]
+}
 const dictionary: Record<string, DictionaryEntry> = {}
 
 // we use a chokidar watcher so we can rely on it for incremental changes and build only what changed (and its dependencies)
@@ -38,15 +42,24 @@ export const viteIncrementalBuild = ({
 		.on('unlinkDir', buildFn)
 		.on('change', (file: string) => {
 			watcherModifiedFile = file.replace(sourceFolder + '/', '')
-			void buildBundle(bundleName, config, beforeBuildCallback).then(() => {
-				watcherModifiedFile = null
-			})
+			void buildBundle(bundleName, config, beforeBuildCallback).then(
+				() => {
+					watcherModifiedFile = null
+				}
+			)
 		})
 }
 
 /** patch up vite config with necessary prerequisites for incremental build */
-export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } = {}) => {
-	if (config.root === undefined || !config.root.startsWith('./') || config.root.endsWith('/')) {
+export const patchConfig = (
+	config: vite.UserConfig,
+	{ ignoreWarnings = false } = {}
+) => {
+	if (
+		config.root === undefined ||
+		!config.root.startsWith('./') ||
+		config.root.endsWith('/')
+	) {
 		console.log(
 			'\x1b[31m%s\x1b[0m',
 			`expected to find 'root' in vite config and for 'root' to start with "./" and not to end with "/"`
@@ -55,23 +68,35 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 	}
 	if (config.build === undefined) {
 		config.build = {}
-		if (!ignoreWarnings) console.log('\x1b[33m%s\x1b[0m', `expected to find 'build' in vite config`)
+		if (!ignoreWarnings)
+			console.log(
+				'\x1b[33m%s\x1b[0m',
+				`expected to find 'build' in vite config`
+			)
 	}
 	if (config.build === undefined) {
 		config.build = {}
-		if (!ignoreWarnings) console.log('\x1b[33m%s\x1b[0m', `expected to find 'build' in vite config`)
+		if (!ignoreWarnings)
+			console.log(
+				'\x1b[33m%s\x1b[0m',
+				`expected to find 'build' in vite config`
+			)
 	}
 	if (config.build.rollupOptions === undefined) {
 		config.build.rollupOptions = {}
 	} else if (!ignoreWarnings) {
-		console.log('\x1b[33m%s\x1b[0m', `expected to 'build.rollupOptions' in vite config to not exist`)
+		console.log(
+			'\x1b[33m%s\x1b[0m',
+			`expected to 'build.rollupOptions' in vite config to not exist`
+		)
 	}
 
 	config.build.emptyOutDir = false
 	config.build.rollupOptions.preserveEntrySignatures = 'strict'
 	config.build.rollupOptions.output = {
 		entryFileNames: ({ facadeModuleId, name }) => {
-			if (`${facadeModuleId}`.includes('/node_modules/')) return 'node_modules/[name].js'
+			if (`${facadeModuleId}`.includes('/node_modules/'))
+				return 'node_modules/[name].js'
 			if (name.endsWith('.vue')) return name.replace('.vue', '.js')
 			return '[name].js'
 		},
@@ -93,7 +118,7 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 		},
 		generateBundle(_, bundle) {
 			void (async () => {
-				await new Promise<void>(resolve => {
+				await new Promise<void>((resolve) => {
 					waitForBuildEndPromiseResolver = resolve
 				})
 
@@ -101,24 +126,33 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 					// update files that import this file if the hash changed
 					// CSS
 					if (watcherModifiedFile.includes('.vue')) {
-						const dictKey = watcherModifiedFile.replace('.vue', '.css')
+						const dictKey = watcherModifiedFile.replace(
+							'.vue',
+							'.css'
+						)
 						const dictEntry = dictionary[dictKey]
 						if (dictEntry) {
 							const oldName = dictEntry.realLocationInDist
-							const newName = Object.values(bundle).find(fileInfo => {
-								return fileInfo.name === dictKey
-							})?.fileName
+							const newName = Object.values(bundle).find(
+								(fileInfo) => {
+									return fileInfo.name === dictKey
+								}
+							)?.fileName
 
 							if (oldName && newName && oldName !== newName) {
 								fs.rmSync('./dist/' + oldName)
 								dictEntry.realLocationInDist = newName
-								dictEntry.parents.forEach(file => {
-									const fileName = dictionary[file]!.realLocationInDist
+								dictEntry.parents.forEach((file) => {
+									const fileName =
+										dictionary[file]!.realLocationInDist
 									const fileContent = fs
 										.readFileSync('./dist/' + fileName)
 										.toString()
 										.replaceAll(oldName, newName)
-									fs.writeFileSync('./dist/' + fileName, fileContent)
+									fs.writeFileSync(
+										'./dist/' + fileName,
+										fileContent
+									)
 								})
 							}
 						}
@@ -127,11 +161,18 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 				}
 
 				console.log('\x1b[90m%s\x1b[0m', '    building dependency tree')
-				Object.values(bundle).forEach(fileInfo => {
+				Object.values(bundle).forEach((fileInfo) => {
 					if (fileInfo.fileName.includes('node_modules')) return
 					if (fileInfo.fileName.includes('_virtual')) return
-					if (!('facadeModuleId' in fileInfo) || !fileInfo.facadeModuleId) {
-						if (fileInfo.type !== 'asset' || !fileInfo.name?.endsWith('.css')) return
+					if (
+						!('facadeModuleId' in fileInfo) ||
+						!fileInfo.facadeModuleId
+					) {
+						if (
+							fileInfo.type !== 'asset' ||
+							!fileInfo.name?.endsWith('.css')
+						)
+							return
 						dictionary[fileInfo.name] = {
 							parents: new Set(),
 							realLocationInDist: fileInfo.fileName,
@@ -141,31 +182,44 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 						dictionary[fileInfo.name + '.js'] = {
 							parents: new Set(),
 							realLocationInDist: fileInfo.fileName,
-							imports: [...fileInfo.imports, ...fileInfo.dynamicImports],
+							imports: [
+								...fileInfo.imports,
+								...fileInfo.dynamicImports,
+							],
 						}
 					}
 				})
 				const cssImportsToFind = new Set<string>()
 				Object.entries(dictionary).forEach(([key, fileInfo]) => {
-					fileInfo.imports.forEach(imported => {
+					fileInfo.imports.forEach((imported) => {
 						if (imported.includes('node_modules')) return
 						if (imported.includes('_virtual')) return
 						const bundleEntry = bundle[imported]
 						if (!bundleEntry) return
 						dictionary[bundleEntry.name + '.js']?.parents.add(key)
 					})
-					if (key.endsWith('.css')) cssImportsToFind.add(key);
+					if (key.endsWith('.css')) cssImportsToFind.add(key)
 				})
-				fg.globSync('dist/**/*.html').forEach(match => {
+				fg.globSync('dist/**/*.html').forEach((match) => {
 					const key = match.replace('dist/', '')
-					dictionary[key] = { realLocationInDist: key, parents: new Set(), imports: [] }
+					dictionary[key] = {
+						realLocationInDist: key,
+						parents: new Set(),
+						imports: [],
+					}
 				})
 				Object.entries(dictionary).forEach(([key, fileInfo]) => {
-					if (fileInfo.realLocationInDist.startsWith('assets/')) return
-					cssImportsToFind.forEach(cssImportEntryKey => {
+					if (fileInfo.realLocationInDist.startsWith('assets/'))
+						return
+					cssImportsToFind.forEach((cssImportEntryKey) => {
 						const cssImportEntry = dictionary[cssImportEntryKey]
-						const code = fs.readFileSync('./dist/' + fileInfo.realLocationInDist)
-						if (cssImportEntry && code.includes(cssImportEntry.realLocationInDist)) {
+						const code = fs.readFileSync(
+							'./dist/' + fileInfo.realLocationInDist
+						)
+						if (
+							cssImportEntry &&
+							code.includes(cssImportEntry.realLocationInDist)
+						) {
 							cssImportEntry.parents.add(key)
 						}
 					})
@@ -186,7 +240,11 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 	return config
 }
 
-const buildBundle = async (bundleName: string, config: vite.UserConfig, beforeBuildCallback?: () => void) => {
+const buildBundle = async (
+	bundleName: string,
+	config: vite.UserConfig,
+	beforeBuildCallback?: () => void
+) => {
 	if (running) return
 	running = true
 	beforeBuildCallback?.()
@@ -194,9 +252,16 @@ const buildBundle = async (bundleName: string, config: vite.UserConfig, beforeBu
 	console.log('\x1b[90m%s\x1b[0m', `building ${bundleName}`)
 	try {
 		await vite.build({ configFile: false, ...config })
-		console.log('\x1b[32m%s\x1b[0m', `✓ ${bundleName} built in ${((performance.now() - start) / 1000).toFixed(3)}s`)
+		console.log(
+			'\x1b[32m%s\x1b[0m',
+			`✓ ${bundleName} built in ${((performance.now() - start) / 1000).toFixed(3)}s`
+		)
 	} catch (error) {
-		console.error(typeof error === 'object' && error && 'message' in error ? error.message : error)
+		console.error(
+			typeof error === 'object' && error && 'message' in error
+				? error.message
+				: error
+		)
 		console.log(
 			'\x1b[31m%s\x1b[0m',
 			`𐄂 ${bundleName} failed in ${((performance.now() - start) / 1000).toFixed(3)}s`
