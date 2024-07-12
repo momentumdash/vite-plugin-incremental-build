@@ -1,9 +1,11 @@
 
+import { existsSync, rmSync } from 'node:fs'
 import viteConfig from '../vite.config'
 import { viteIncrementalBuild, patchConfig } from 'vite-plugin-incremental-build'
 
+if (existsSync('./dist')) rmSync('./dist/', { recursive: true, force: true })
 viteIncrementalBuild({
-	config: patchConfig(viteConfig, { ignoreWarnings: true }),
+	config: patchConfig(viteConfig),
 	bundleName: 'bundle',
 	watcherIgnoredFiles: [/(^|[\/\\])\../, /* ignore dotfiles */],
 	beforeBuildCallback: () => {

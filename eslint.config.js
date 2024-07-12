@@ -24,6 +24,6 @@ export default tsEslint.config(
 		],
 	}),
 	{
-		ignores: ['lib/'],
+		ignores: ['lib/', 'example/'],
 	}
 )
