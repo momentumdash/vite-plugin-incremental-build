@@ -9,7 +9,7 @@ let watcherModifiedFile: string | null = null
 let waitForBuildEndPromiseResolver: (() => void) | undefined
 type DictionaryEntry = {
 	parents: Set<string>
-	realLocationInDist: string
+	realLocationInDist: string[]
 	imports: string[]
 }
 const dictionary: Record<string, DictionaryEntry> = {}
@@ -17,6 +17,8 @@ let originalEntries: Record<string, string>
 
 // we use a chokidar watcher so we can rely on it for incremental changes and build only what changed (and its dependencies)
 // it's also easier to trigger a full rebuild when the file structure changes
+
+let buildFn: () => void
 
 export const viteIncrementalBuild = ({
 	config,
@@ -29,7 +31,7 @@ export const viteIncrementalBuild = ({
 	watcherIgnoredFiles?: (string | RegExp)[]
 	beforeBuildCallback?: () => void
 }) => {
-	const buildFn = () => {
+	buildFn = () => {
 		void buildBundle(bundleName, config, beforeBuildCallback)
 	}
 	const sourceFolder = config.root?.replace('./', '')
@@ -94,11 +96,6 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 			if (name.endsWith('.vue')) return name.replace('.vue', '.js')
 			return '[name].js'
 		},
-		chunkFileNames: (chunkInfo) => {
-			console.log(chunkInfo)
-			debugger
-			return '[name]-[hash].js'
-		},
 		preserveModules: true,
 		preserveModulesRoot: config.root.replace('./', ''),
 		inlineDynamicImports: false,
@@ -128,22 +125,32 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 						const dictKey = watcherModifiedFile.replace('.vue', '.css')
 						const dictEntry = dictionary[dictKey]
 						if (dictEntry) {
-							const oldName = dictEntry.realLocationInDist
-							const newName = Object.values(bundle).find((fileInfo) => {
-								return fileInfo.name === dictKey
-							})?.fileName
-
-							if (oldName && newName && oldName !== newName) {
-								fs.rmSync('./dist/' + oldName)
-								dictEntry.realLocationInDist = newName
-								dictEntry.parents.forEach((file) => {
-									const fileName = dictionary[file]!.realLocationInDist
-									const fileContent = fs
-										.readFileSync('./dist/' + fileName)
-										.toString()
-										.replaceAll(oldName, newName)
-									fs.writeFileSync('./dist/' + fileName, fileContent)
+							const oldNames = dictEntry.realLocationInDist
+							const newNames = Object.values(bundle)
+								.filter((fileInfo) => {
+									return fileInfo.name === dictKey
 								})
+								.map((fileInfo) => fileInfo.fileName)
+
+							if (oldNames.length !== newNames.length) {
+								return buildFn()
+							}
+							dictEntry.realLocationInDist = newNames
+							for (let i = 0; i < oldNames.length; i++) {
+								const oldName = oldNames[i],
+									newName = newNames[i]
+
+								if (oldName && newName && oldName !== newName) {
+									fs.rmSync('./dist/' + oldName)
+									dictEntry.parents.forEach((file) => {
+										const fileName = dictionary[file]!.realLocationInDist
+										const fileContent = fs
+											.readFileSync('./dist/' + fileName)
+											.toString()
+											.replaceAll(oldName, newName)
+										fs.writeFileSync('./dist/' + fileName, fileContent)
+									})
+								}
 							}
 						}
 					}
@@ -156,15 +163,19 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 					if (fileInfo.fileName.includes('_virtual')) return
 					if (!('facadeModuleId' in fileInfo) || !fileInfo.facadeModuleId) {
 						if (fileInfo.type !== 'asset' || !fileInfo.name?.endsWith('.css')) return
-						dictionary[fileInfo.name] = {
-							parents: new Set(),
-							realLocationInDist: fileInfo.fileName,
-							imports: [],
-						}
+						// css files can have more than one realLocation (vue with many style blocks)
+						const dictEntry = dictionary[fileInfo.name]
+						if (dictEntry) dictionary[fileInfo.name].realLocationInDist.push(fileInfo.fileName)
+						else
+							dictionary[fileInfo.name] = {
+								parents: new Set(),
+								realLocationInDist: [fileInfo.fileName],
+								imports: [],
+							}
 					} else {
 						dictionary[fileInfo.name + '.js'] = {
 							parents: new Set(),
-							realLocationInDist: fileInfo.fileName,
+							realLocationInDist: [fileInfo.fileName],
 							imports: [...fileInfo.imports, ...fileInfo.dynamicImports],
 						}
 					}
@@ -183,19 +194,21 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 				fg.globSync('dist/**/*.html').forEach((match) => {
 					const key = match.replace('dist/', '')
 					dictionary[key] = {
-						realLocationInDist: key,
+						realLocationInDist: [key],
 						parents: new Set(),
 						imports: [],
 					}
 				})
 				Object.entries(dictionary).forEach(([key, fileInfo]) => {
-					if (fileInfo.realLocationInDist.startsWith('assets/')) return
+					if (fileInfo.realLocationInDist[0].startsWith('assets/')) return
 					cssImportsToFind.forEach((cssImportEntryKey) => {
 						const cssImportEntry = dictionary[cssImportEntryKey]
 						const code = fs.readFileSync('./dist/' + fileInfo.realLocationInDist)
-						if (cssImportEntry && code.includes(cssImportEntry.realLocationInDist)) {
-							cssImportEntry.parents.add(key)
-						}
+						cssImportEntry.realLocationInDist.forEach((file) => {
+							if (cssImportEntry && code.includes(file)) {
+								cssImportEntry.parents.add(key)
+							}
+						})
 					})
 				})
 				console.log('\x1b[32m%s\x1b[0m', '    ✓ dependency tree built')
