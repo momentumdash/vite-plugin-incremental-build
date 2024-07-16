@@ -3,6 +3,7 @@ import chokidar from 'chokidar'
 import fs from 'node:fs'
 import fg from 'fast-glob'
 import path from 'node:path'
+import readline from 'node:readline'
 
 let running = false
 let watcherModifiedFile: string | null = null
@@ -50,6 +51,15 @@ export const viteIncrementalBuild = ({
 				watcherModifiedFile = null
 			})
 		})
+
+	// https://stackoverflow.com/a/69764622 no additional dependency cli keypress listener
+	readline.emitKeypressEvents(process.stdin)
+	process.stdin.on('keypress', (_, key) => {
+		if (key && key.ctrl && key.name == 'c') process.exit(0)
+		if (key && key.name == 'r') buildFn()
+	})
+	process.stdin.setRawMode(true)
+	process.stdin.resume()
 }
 
 /** patch up vite config with necessary prerequisites for incremental build */
@@ -256,6 +266,10 @@ const buildBundle = async (bundleName: string, config: vite.UserConfig, beforeBu
 			`𐄂 ${bundleName} failed in ${((performance.now() - start) / 1000).toFixed(3)}s`
 		)
 	}
+	console.log(
+		'\x1b[90m%s\x1b[0m',
+		'press r to trigger a full rebuild (if you changed branch or suspect that files are missing)'
+	)
 	setTimeout(() => {
 		// build sometimes trigger the watcher without 200ms delay
 		running = false
