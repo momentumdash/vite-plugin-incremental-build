@@ -13,7 +13,7 @@ type DictionaryEntry = {
 	realLocationInDist: string[]
 	imports: string[]
 }
-const dictionary: Record<string, DictionaryEntry> = {}
+let dictionary: Record<string, DictionaryEntry> = {}
 let originalEntries: Record<string, string>
 
 // we use a chokidar watcher so we can rely on it for incremental changes and build only what changed (and its dependencies)
@@ -167,6 +167,7 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 					return
 				}
 
+				dictionary = {}
 				console.log('\x1b[90m%s\x1b[0m', '    building dependency tree')
 				Object.values(bundle).forEach((fileInfo) => {
 					if (fileInfo.fileName.includes('node_modules')) return
