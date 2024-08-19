@@ -89,10 +89,20 @@ project
 Loosely based on the [rollup-plugin-incremental](https://github.com/mprt-org/rollup-plugin-incremental/)
 
 
-Notes:
+**Notes:**
 
-For extensions, it's required to patch rollup (use `patch-package`) to replace `_virtual` by `rollup__virtual` in order for chrome to allow installation of the bundle
+For extensions, it's required to change the `virtualDirname` in order for chrome to allow installation of the bundle. Something like this is recommended (make sure your rollup version is >=4.21.0)
+```ts
+const config = patchConfig(getConfig(platform, isProduction))
+if (config.build?.rollupOptions?.output && !Array.isArray(config.build.rollupOptions.output)) {
+	config.build.rollupOptions.output.virtualDirname = 'rollup__virtual'
+}
+viteIncrementalBuild({
+	config,
+	...
+})
+```
 
-Tested only for vue (but React should work)
+Tested only for Vue (but React should work)
 
 Build speed is highly dependent on how many files are imported by the file that you are saving. The more files your file imports (including the files that those files import), the longer the incremental build will take
