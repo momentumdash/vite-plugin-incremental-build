@@ -102,7 +102,8 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 	config.build.rollupOptions.preserveEntrySignatures = 'strict'
 	config.build.rollupOptions.output = {
 		entryFileNames: ({ facadeModuleId, name }) => {
-			if (`${facadeModuleId}`.includes('/node_modules/')) return 'node_modules/[name].js'
+			if (`${facadeModuleId}`.includes('/node_modules/'))
+				return `node_modules/${name.split('node_modules/').at(-1)}.js`
 			if (name.endsWith('.vue')) return name.replace('.vue', '.js')
 			return '[name].js'
 		},
