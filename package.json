@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-incremental-build",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "This is a wrapper + plugin for Vite that brings incremental builds for your project",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
