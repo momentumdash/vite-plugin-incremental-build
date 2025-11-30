@@ -46,7 +46,8 @@ export const viteIncrementalBuild = ({
 		.on('unlink', buildFn)
 		.on('unlinkDir', buildFn)
 		.on('change', (file: string) => {
-			watcherModifiedFile = file.replace(sourceFolder + '/', '')
+            // mac: "/", windows: "\\"
+			watcherModifiedFile = file.startsWith(sourceFolder + '/') ? file.replace(sourceFolder + '/', '') : file.replace(sourceFolder + '\\', '')
 			void buildBundle(bundleName, config, beforeBuildCallback).then(() => {
 				watcherModifiedFile = null
 			})
@@ -240,7 +241,7 @@ export const patchConfig = (config: vite.UserConfig, { ignoreWarnings = false } 
 				let entryName = watcherModifiedFile.split('.')[0]!
 				const findMatching = (item: [string, string]) =>
 					path.resolve(item[1]) === path.resolve(config.root + '/' + watcherModifiedFile)
-				const matchingItemInEntries = Object.entries(originalEntries).find(findMatching)
+				const matchingItemInEntries = Object.entries(originalEntries ?? {}).find(findMatching)
 				if (originalEntries && matchingItemInEntries) entryName = matchingItemInEntries[0]
 				const modifiedEntries = {
 					[entryName]: config.root + '/' + watcherModifiedFile,

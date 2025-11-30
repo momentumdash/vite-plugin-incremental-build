@@ -6,7 +6,8 @@ brings incremental builds for your project
 
 #### Use case:
 
-Large web extensions that need to be built to the disk to be installed (see notes if you are using this for an extension)
+Projects that need to be built to the disk instead of being served by vite
+- If you can, the recommended approach is to use csp to allow localhost (in your dev environment and use the vite dev server without this plugin at all)
 
 ## Installation
 
@@ -30,7 +31,7 @@ viteIncrementalBuild({
 	bundleName: 'bundle',
 	watcherIgnoredFiles: ['./src/not-watched', /(^|[\/\\])\../, /* ignore dotfiles */],
 	beforeBuildCallback: () => {
-		// do whatever you want here, like build content scripts in iife mode
+		// do whatever you want here
 	}
 })
 ```
@@ -91,18 +92,13 @@ Loosely based on the [rollup-plugin-incremental](https://github.com/mprt-org/rol
 
 **Notes:**
 
-For extensions, it's required to change the `virtualDirname` in order for chrome to allow installation of the bundle. Something like this is recommended (make sure your rollup version is >=4.21.0)
-```ts
-const config = patchConfig(getConfig(platform, isProduction))
-if (config.build?.rollupOptions?.output && !Array.isArray(config.build.rollupOptions.output)) {
-	config.build.rollupOptions.output.virtualDirname = 'rollup__virtual'
-}
-viteIncrementalBuild({
-	config,
-	...
-})
-```
+- For extensions, don't use this package. Instead:
+    1. build the minimum files needed to install the extension (manifest, public files, index.html)
+    2. in index.html, make your entry be a served js/ts file from localhost (vite dev server)
+    3. Allow localhost in your manifest's CSP
+    4. Have as much javascript served from vite as possible
+- If you need to remap where files are built, try to do it in a vite middleware
 
-Tested only for Vue (but React should work)
-
-Build speed is highly dependent on how many files are imported by the file that you are saving. The more files your file imports (including the files that those files import), the longer the incremental build will take
+- Tested only for Vue (React should work)
+- Untested for rolldown
+- Build speed is highly dependent on how many files are imported by the file that you are saving. The more files your file imports (including the files that those files import), the longer the incremental build will take
